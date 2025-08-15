@@ -1,8 +1,16 @@
-from fastapi import FastAPI, Depends, HTTPException
+# Add login endpoint
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(Employee).filter(Employee.code == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    access_token = create_access_token(data={"sub": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from zk import attendance
-from .database import init_db, SessionLocal
-
+from .database import init_db
+from .models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
 from .schemas import EmployeeCreate, EmployeeUpdate, EmployeeOut
 from .schemas_extra import (
     ShiftCreate, ShiftUpdate, ShiftOut,
@@ -14,9 +22,11 @@ from .schemas_extra import (
     LeaveCreate, LeaveUpdate, LeaveOut,
     HolidayCreate, HolidayUpdate, HolidayOut
 )
-from .models import (
-    Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
+from .auth import (
+    get_password_hash, verify_password, create_access_token,
+    get_current_user, get_current_admin, oauth2_scheme, get_db
 )
+from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
 
 app = FastAPI()
@@ -25,47 +35,58 @@ app = FastAPI()
 def on_startup():
     init_db()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-# Employee CRUD endpoints
-@app.post("/employees/", response_model=EmployeeOut)
-def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
-    db_employee = Employee(**employee.dict())
+# Employee CRUD endpoints (admin only for create/delete/list, self or admin for get/update)
+@app.post("/employees/", response_model=EmployeeOut, status_code=201)
+def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    db_employee = Employee(
+        name=employee.name,
+        code=employee.code,
+        department=employee.department,
+        password_hash=get_password_hash(employee.password),
+        is_admin=employee.is_admin or False
+    )
     db.add(db_employee)
     db.commit()
     db.refresh(db_employee)
     return db_employee
 
 @app.get("/employees/", response_model=List[EmployeeOut])
-def read_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
     return db.query(Employee).offset(skip).limit(limit).all()
 
 @app.get("/employees/{employee_id}", response_model=EmployeeOut)
-def read_employee(employee_id: int, db: Session = Depends(get_db)):
+def read_employee(employee_id: int, db: Session = Depends(get_db), current_user: Employee = Depends(get_current_user)):
     emp = db.query(Employee).filter(Employee.id == employee_id).first()
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
+    # Only admin or the employee themselves can view
+    if not current_user.is_admin and current_user.id != emp.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
     return emp
 
 @app.put("/employees/{employee_id}", response_model=EmployeeOut)
-def update_employee(employee_id: int, employee: EmployeeUpdate, db: Session = Depends(get_db)):
+def update_employee(employee_id: int, employee: EmployeeUpdate, db: Session = Depends(get_db), current_user: Employee = Depends(get_current_user)):
     db_employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not db_employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+    # Only admin or the employee themselves can update
+    if not current_user.is_admin and current_user.id != db_employee.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
     for var, value in vars(employee).items():
         if value is not None:
-            setattr(db_employee, var, value)
+            if var == "password":
+                db_employee.password_hash = get_password_hash(value)
+            elif var == "is_admin" and not current_user.is_admin:
+                continue  # Only admin can change admin status
+            else:
+                setattr(db_employee, var, value)
     db.commit()
     db.refresh(db_employee)
     return db_employee
 
 @app.delete("/employees/{employee_id}")
-def delete_employee(employee_id: int, db: Session = Depends(get_db)):
+def delete_employee(employee_id: int, db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
     db_employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not db_employee:
         raise HTTPException(status_code=404, detail="Employee not found")
