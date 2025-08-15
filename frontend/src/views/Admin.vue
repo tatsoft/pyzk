@@ -10,7 +10,15 @@
     </v-tabs>
     <v-window v-model="tab">
       <v-window-item value="employees">
-        <v-card-text :class="rtlClass">{{ $t('admin_employees_placeholder') }}</v-card-text>
+        <v-card-text :class="rtlClass">
+          <v-data-table
+            :headers="empHeaders"
+            :items="employees"
+            :loading="empLoading"
+            class="elevation-1"
+            :no-data-text="$t('no_data')"
+          />
+        </v-card-text>
       </v-window-item>
       <v-window-item value="shifts">
         <v-card-text :class="rtlClass">{{ $t('admin_shifts_placeholder') }}</v-card-text>
@@ -29,10 +37,34 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 const tab = ref('employees')
 const { locale, t } = useI18n()
 const isArabic = computed(() => locale.value === 'ar')
 const rtlClass = computed(() => isArabic.value ? 'text-end' : 'text-start')
+
+const employees = ref([])
+const empLoading = ref(false)
+const empHeaders = [
+  { text: t('username') || 'Username', value: 'username' },
+  { text: t('name') || 'Name', value: 'name' },
+  { text: t('role') || 'Role', value: 'role' },
+]
+
+onMounted(async () => {
+  empLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('http://localhost:8000/employees', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) throw new Error()
+    employees.value = await res.json()
+  } catch (e) {
+    employees.value = []
+  } finally {
+    empLoading.value = false
+  }
+})
 </script>
