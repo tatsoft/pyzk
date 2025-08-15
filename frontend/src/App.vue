@@ -2,27 +2,31 @@
   <v-app>
     <v-navigation-drawer app v-model="drawer" :clipped="$vuetify.display.mdAndUp" :location="isArabic ? 'right' : 'left'">
       <v-list>
-        <v-list-item v-for="item in navItems" :key="item.text" :to="item.to" link>
-          <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
-          </v-list-item-content>
+        <v-list-item v-for="item in navItems" :key="item.text" :to="item.to" link :class="isArabic ? 'text-end' : 'text-start'">
+          <div :class="isArabic ? 'd-flex flex-row-reverse align-center w-100' : 'd-flex align-center w-100'">
+            <v-list-item-icon>
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
+            </v-list-item-content>
+          </div>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar app color="primary" dark>
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-toolbar-title>{{ $t('welcome') }}</v-toolbar-title>
-      <v-spacer />
-      <v-btn icon @click="toggleLang">
-        <v-icon>{{ isArabic ? 'mdi-translate' : 'mdi-translate' }}</v-icon>
-      </v-btn>
-      <span style="margin-inline-start: 8px;">{{ isArabic ? 'العربية' : 'EN' }}</span>
-      <v-btn icon @click="toggleTheme">
-        <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
-      </v-btn>
+    <v-app-bar app color="primary" dark :class="{ 'rtl-bar': isArabic }">
+      <div class="app-bar-content" :class="{ 'flex-row-reverse': isArabic }">
+        <v-app-bar-nav-icon @click="drawer = !drawer" />
+        <v-toolbar-title>{{ $t('welcome') }}</v-toolbar-title>
+        <v-spacer />
+        <v-btn icon @click="toggleLang">
+          <v-icon>{{ isArabic ? 'mdi-translate' : 'mdi-translate' }}</v-icon>
+        </v-btn>
+        <span style="margin-inline-start: 8px;">{{ isArabic ? 'العربية' : 'EN' }}</span>
+        <v-btn icon @click="toggleTheme">
+          <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+        </v-btn>
+      </div>
     </v-app-bar>
     <v-main>
       <v-container fluid>
@@ -67,4 +71,12 @@ const toggleTheme = () => {
 html, body, #app {
   height: 100%;
 }
+  .app-bar-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  .flex-row-reverse {
+    flex-direction: row-reverse;
+  }
 </style>
