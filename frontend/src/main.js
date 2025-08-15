@@ -31,6 +31,11 @@ import '@mdi/font/css/materialdesignicons.css'
 import routes from './routes'
 import i18n from './i18n'
 
+// Simple auth util
+function isAuthenticated() {
+	return !!localStorage.getItem('token')
+}
+
 const vuetify = createVuetify({
 	components: {
 		VApp,
@@ -73,6 +78,24 @@ const vuetify = createVuetify({
 const router = createRouter({
 	history: createWebHistory(),
 	routes,
+})
+
+// Navigation guard for auth and admin
+function parseJwt (token) {
+	try {
+		return JSON.parse(atob(token.split('.')[1]))
+	} catch (e) { return {} }
+}
+router.beforeEach((to, from, next) => {
+	if (to.path === '/login') return next()
+	if (!isAuthenticated()) return next('/login')
+	// Protect admin/settings routes
+	if ((to.path === '/admin' || to.path === '/settings')) {
+		const token = localStorage.getItem('token')
+		const payload = parseJwt(token)
+		if (!payload.is_admin) return next('/')
+	}
+	next()
 })
 
 createApp(App)

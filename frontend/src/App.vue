@@ -1,33 +1,39 @@
 <template>
   <v-app>
-    <v-navigation-drawer app v-model="drawer" :clipped="$vuetify.display.mdAndUp" :location="isArabic ? 'right' : 'left'">
-      <v-list>
-        <v-list-item v-for="item in navItems" :key="item.text" :to="item.to" link :class="isArabic ? 'text-end' : 'text-start'">
-          <div :class="isArabic ? 'd-flex flex-row-reverse align-center w-100' : 'd-flex align-center w-100'">
-            <v-list-item-icon>
-              <v-icon>{{ item.icon }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
-            </v-list-item-content>
-          </div>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
-    <v-app-bar app color="primary" dark :class="{ 'rtl-bar': isArabic }">
-      <div class="app-bar-content" :class="{ 'flex-row-reverse': isArabic }">
-        <v-app-bar-nav-icon @click="drawer = !drawer" />
-        <v-toolbar-title>{{ $t('welcome') }}</v-toolbar-title>
-        <v-spacer />
-        <v-btn icon @click="toggleLang">
-          <v-icon>{{ isArabic ? 'mdi-translate' : 'mdi-translate' }}</v-icon>
-        </v-btn>
-        <span style="margin-inline-start: 8px;">{{ isArabic ? 'العربية' : 'EN' }}</span>
-        <v-btn icon @click="toggleTheme">
-          <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
-        </v-btn>
-      </div>
-    </v-app-bar>
+    <template v-if="$route.path !== '/login'">
+      <v-navigation-drawer app v-model="drawer" :clipped="$vuetify.display.mdAndUp" :location="isArabic ? 'right' : 'left'">
+        <v-list>
+          <v-list-item v-for="item in navItems" :key="item.text" :to="item.to" link :class="isArabic ? 'text-end' : 'text-start'">
+            <div :class="isArabic ? 'd-flex flex-row-reverse align-center w-100' : 'd-flex align-center w-100'">
+              <v-list-item-icon>
+                <v-icon>{{ item.icon }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
+              </v-list-item-content>
+            </div>
+          </v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+      <v-app-bar app color="primary" dark :class="{ 'rtl-bar': isArabic }">
+        <div class="app-bar-content" :class="{ 'flex-row-reverse': isArabic }">
+          <v-app-bar-nav-icon @click="drawer = !drawer" />
+          <v-toolbar-title>{{ $t('welcome') }}</v-toolbar-title>
+          <v-spacer />
+          <span v-if="username" class="mx-2">{{ username }}</span>
+          <v-btn icon @click="logout" v-if="username">
+            <v-icon>mdi-logout</v-icon>
+          </v-btn>
+          <v-btn icon @click="toggleLang">
+            <v-icon>{{ isArabic ? 'mdi-translate' : 'mdi-translate' }}</v-icon>
+          </v-btn>
+          <span style="margin-inline-start: 8px;">{{ isArabic ? 'العربية' : 'EN' }}</span>
+          <v-btn icon @click="toggleTheme">
+            <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+          </v-btn>
+        </div>
+      </v-app-bar>
+    </template>
     <v-main>
       <v-container fluid>
         <router-view />
@@ -41,13 +47,40 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 const drawer = ref(false)
-const navItems = [
-  { text: 'home', to: '/', icon: 'mdi-home' },
-  { text: 'attendance', to: '/attendance', icon: 'mdi-calendar-check' },
-  { text: 'admin', to: '/admin', icon: 'mdi-account-cog' },
-  { text: 'settings', to: '/settings', icon: 'mdi-cog' },
-]
+const navItems = computed(() => {
+  const items = [
+    { text: 'home', to: '/', icon: 'mdi-home' },
+    { text: 'attendance', to: '/attendance', icon: 'mdi-calendar-check' },
+  ]
+  if (isAdmin.value) {
+    items.push({ text: 'admin', to: '/admin', icon: 'mdi-account-cog' })
+    items.push({ text: 'settings', to: '/settings', icon: 'mdi-cog' })
+  }
+  return items
+})
+import { useRouter } from 'vue-router'
 const { locale } = useI18n()
+// JWT decode helper
+function parseJwt (token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) { return {} }
+}
+
+
+const userPayload = computed(() => {
+  const token = localStorage.getItem('token')
+  if (!token) return {}
+  return parseJwt(token)
+})
+const username = computed(() => userPayload.value?.sub || userPayload.value?.username || '')
+const isAdmin = computed(() => userPayload.value?.is_admin === true || userPayload.value?.is_admin === 1)
+
+const router = useRouter()
+function logout() {
+  localStorage.removeItem('token')
+  router.push('/login')
+}
 const isArabic = computed(() => locale.value === 'ar')
 const toggleLang = () => {
   locale.value = isArabic.value ? 'en' : 'ar'
