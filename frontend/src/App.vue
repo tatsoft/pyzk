@@ -37,6 +37,18 @@
           <v-btn icon @click="toggleTheme">
             <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
           </v-btn>
+        </div>
+      </v-app-bar>
+    </template>
+    <v-main>
+      <v-container fluid>
+        <router-view />
+      </v-container>
+    </v-main>
+  </v-app>
+</template>
+
+<script setup>
 import { onMounted } from 'vue'
 const dbStatus = ref('unknown')
 const deviceStatus = ref('unknown')
@@ -55,18 +67,6 @@ onMounted(() => {
   checkStatus()
   setInterval(checkStatus, 5000)
 })
-        </div>
-      </v-app-bar>
-    </template>
-    <v-main>
-      <v-container fluid>
-        <router-view />
-      </v-container>
-    </v-main>
-  </v-app>
-</template>
-
-<script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'

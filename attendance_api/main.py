@@ -1,28 +1,9 @@
-from sqlalchemy.exc import SQLAlchemyError
-import socket
-# Health check endpoints
-@app.get("/health/db")
-def health_db(db: Session = Depends(get_db)):
-    try:
-        # Simple query to check DB connection
-        db.execute("SELECT 1")
-        return {"status": "ok"}
-    except SQLAlchemyError:
-        raise HTTPException(status_code=500, detail="Database not reachable")
 
-# Dummy device health check (replace with real check as needed)
-@app.get("/health/device")
-def health_device():
-    # Example: try to connect to device IP/port (replace with real logic)
-    DEVICE_IP = "192.168.1.201"  # <-- set your device IP
-    DEVICE_PORT = 4370            # <-- set your device port
-    try:
-        with socket.create_connection((DEVICE_IP, DEVICE_PORT), timeout=2):
-            return {"status": "ok"}
-    except Exception:
-        raise HTTPException(status_code=500, detail="Device not reachable")
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+import socket
 from attendance_api.database import init_db
 from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
 from attendance_api.schemas import EmployeeCreate, EmployeeUpdate, EmployeeOut
@@ -53,6 +34,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check endpoints
+@app.get("/health/db")
+def health_db(db: Session = Depends(get_db)):
+    try:
+        # Simple query to check DB connection
+        db.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except SQLAlchemyError as exc:
+        print(f"[HEALTH/DB ERROR] {exc}")
+        raise HTTPException(status_code=500, detail=f"Database not reachable: {exc}")
+
+# Dummy device health check (replace with real check as needed)
+@app.get("/health/device")
+def health_device():
+    # Example: try to connect to device IP/port (replace with real logic)
+   # DEVICE_IP = "192.168.1.201"   <-- set your device IP
+    DEVICE_IP = "127.0.0.1"
+    DEVICE_PORT = 4380            # <-- set your device port
+    try:
+        with socket.create_connection((DEVICE_IP, DEVICE_PORT), timeout=2):
+            return {"status": "ok"}
+    except Exception as exc:
+        print(f"[HEALTH/DEVICE ERROR] {exc}")
+        raise HTTPException(status_code=500, detail=f"Device not reachable: {exc}")
 
 # Add login endpoint
 @app.post("/login")
