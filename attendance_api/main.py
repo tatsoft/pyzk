@@ -1,3 +1,26 @@
+from sqlalchemy.exc import SQLAlchemyError
+import socket
+# Health check endpoints
+@app.get("/health/db")
+def health_db(db: Session = Depends(get_db)):
+    try:
+        # Simple query to check DB connection
+        db.execute("SELECT 1")
+        return {"status": "ok"}
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Database not reachable")
+
+# Dummy device health check (replace with real check as needed)
+@app.get("/health/device")
+def health_device():
+    # Example: try to connect to device IP/port (replace with real logic)
+    DEVICE_IP = "192.168.1.201"  # <-- set your device IP
+    DEVICE_PORT = 4370            # <-- set your device port
+    try:
+        with socket.create_connection((DEVICE_IP, DEVICE_PORT), timeout=2):
+            return {"status": "ok"}
+    except Exception:
+        raise HTTPException(status_code=500, detail="Device not reachable")
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from attendance_api.database import init_db
@@ -37,7 +60,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = db.query(Employee).filter(Employee.code == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
-    access_token = create_access_token(data={"sub": user.id})
+    # Include is_admin in the token payload for frontend
+    access_token = create_access_token(data={"sub": user.id, "is_admin": user.is_admin})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.on_event("startup")

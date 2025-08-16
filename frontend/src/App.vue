@@ -20,6 +20,13 @@
           <v-toolbar-title>{{ $t('welcome') }}</v-toolbar-title>
           <v-spacer />
           <span v-if="username" class="mx-2">{{ username }}</span>
+          <!-- Connectivity indicators -->
+          <span title="Database status" style="margin-right:8px;">
+            <v-icon :color="dbStatus === 'ok' ? 'green' : 'red'">mdi-database</v-icon>
+          </span>
+          <span title="Device status" style="margin-right:8px;">
+            <v-icon :color="deviceStatus === 'ok' ? 'green' : 'red'">mdi-usb</v-icon>
+          </span>
           <v-btn icon @click="logout" v-if="username">
             <v-icon>mdi-logout</v-icon>
           </v-btn>
@@ -30,6 +37,24 @@
           <v-btn icon @click="toggleTheme">
             <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
           </v-btn>
+import { onMounted } from 'vue'
+const dbStatus = ref('unknown')
+const deviceStatus = ref('unknown')
+
+async function checkStatus() {
+  try {
+    const res = await fetch('http://localhost:8000/health/db')
+    dbStatus.value = res.ok ? 'ok' : 'fail'
+  } catch { dbStatus.value = 'fail' }
+  try {
+    const res = await fetch('http://localhost:8000/health/device')
+    deviceStatus.value = res.ok ? 'ok' : 'fail'
+  } catch { deviceStatus.value = 'fail' }
+}
+onMounted(() => {
+  checkStatus()
+  setInterval(checkStatus, 5000)
+})
         </div>
       </v-app-bar>
     </template>

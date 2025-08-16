@@ -42,10 +42,13 @@ const onLogin = async () => {
   loading.value = true
   error.value = ''
   try {
+    const form = new URLSearchParams();
+    form.append('username', username.value);
+    form.append('password', password.value);
     const res = await fetch('http://localhost:8000/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, password: password.value })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
     })
     if (!res.ok) throw new Error()
     const data = await res.json()
