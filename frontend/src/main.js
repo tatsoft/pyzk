@@ -23,7 +23,10 @@ import {
 	VTab,
 	VCard,
 	VCardTitle,
-	VCardText
+	VCardText,
+	VTextField,
+	VAlert,
+	VForm
 } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
@@ -36,28 +39,32 @@ function isAuthenticated() {
 	return !!localStorage.getItem('token')
 }
 
+
 const vuetify = createVuetify({
-	components: {
-		VApp,
-		VAppBar,
-		VAppBarNavIcon,
-		VNavigationDrawer,
-		VList,
-		VListItem,
-		VIcon,
-		VToolbarTitle,
-		VBtn,
-		VSpacer,
-		VMain,
-		VContainer,
-		VRow,
-		VCol,
-		VTabs,
-		VTab,
-		VCard,
-		VCardTitle,
-		VCardText
-	},
+		components: {
+			VApp,
+			VAppBar,
+			VAppBarNavIcon,
+			VNavigationDrawer,
+			VList,
+			VListItem,
+			VIcon,
+			VToolbarTitle,
+			VBtn,
+			VSpacer,
+			VMain,
+			VContainer,
+			VRow,
+			VCol,
+			VTabs,
+			VTab,
+			VCard,
+			VCardTitle,
+			VCardText,
+			VTextField,
+			VAlert,
+			VForm
+		},
 	directives,
 	theme: {
 		defaultTheme: 'dark',

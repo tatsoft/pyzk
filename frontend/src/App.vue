@@ -3,16 +3,15 @@
     <template v-if="$route.path !== '/login'">
       <v-navigation-drawer app v-model="drawer" :clipped="$vuetify.display.mdAndUp" :location="isArabic ? 'right' : 'left'">
         <v-list>
-          <v-list-item v-for="item in navItems" :key="item.text" :to="item.to" link :class="isArabic ? 'text-end' : 'text-start'">
-            <div :class="isArabic ? 'd-flex flex-row-reverse align-center w-100' : 'd-flex align-center w-100'">
-              <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
-              </v-list-item-content>
-            </div>
-          </v-list-item>
+          <v-list-item
+            v-for="item in navItems"
+            :key="item.text"
+            :to="item.to"
+            link
+            :prepend-icon="item.icon"
+            :title="$t(item.text)"
+            :class="isArabic ? 'text-end' : 'text-start'"
+          />
         </v-list>
       </v-navigation-drawer>
       <v-app-bar app color="primary" dark :class="{ 'rtl-bar': isArabic }">

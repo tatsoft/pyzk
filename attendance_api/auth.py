@@ -2,10 +2,10 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from .models import Employee
-from .database import SessionLocal
+from attendance_api.models import Employee
+from attendance_api.database import SessionLocal
 
 SECRET_KEY = "your-secret-key"  # Change this in production!
 ALGORITHM = "HS256"

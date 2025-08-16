@@ -1,18 +1,9 @@
-# Add login endpoint
-@app.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(Employee).filter(Employee.code == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
-    access_token = create_access_token(data={"sub": user.id})
-    return {"access_token": access_token, "token_type": "bearer"}
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from zk import attendance
-from .database import init_db
-from .models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
-from .schemas import EmployeeCreate, EmployeeUpdate, EmployeeOut
-from .schemas_extra import (
+from attendance_api.database import init_db
+from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
+from attendance_api.schemas import EmployeeCreate, EmployeeUpdate, EmployeeOut
+from attendance_api.schemas_extra import (
     ShiftCreate, ShiftUpdate, ShiftOut,
     SchedulePeriodCreate, SchedulePeriodUpdate, SchedulePeriodOut,
     EmployeeScheduleCreate, EmployeeScheduleUpdate, EmployeeScheduleOut,
@@ -22,14 +13,32 @@ from .schemas_extra import (
     LeaveCreate, LeaveUpdate, LeaveOut,
     HolidayCreate, HolidayUpdate, HolidayOut
 )
-from .auth import (
+from attendance_api.auth import (
     get_password_hash, verify_password, create_access_token,
-    get_current_user, get_current_admin, oauth2_scheme, get_db
+    get_current_user, get_current_admin, get_db
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vue dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add login endpoint
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(Employee).filter(Employee.code == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    access_token = create_access_token(data={"sub": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @app.on_event("startup")
 def on_startup():
@@ -93,8 +102,6 @@ def delete_employee(employee_id: int, db: Session = Depends(get_db), admin: Empl
     db.delete(db_employee)
     db.commit()
     return {"ok": True}
-
-# ...existing code...
 
 # Shift CRUD endpoints
 @app.post("/shifts/", response_model=ShiftOut)
