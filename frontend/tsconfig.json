@@ -1,9 +1,12 @@
 {
   // "extends": "tsconfig.json",
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["dist"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-  "lib": ["ES2017", "DOM"]
+    "lib": ["ES2017", "DOM"],
+    "outDir": "dist" // Output compiled files to 'dist' to avoid overwriting source files
   }
 }
+  
