@@ -39,6 +39,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { authFetch } from '../api'
 const tab = ref('employees')
 const { locale, t } = useI18n()
 const isArabic = computed(() => locale.value === 'ar')
@@ -55,10 +56,7 @@ const empHeaders = [
 onMounted(async () => {
   empLoading.value = true
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('http://localhost:8000/employees', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const res = await authFetch('http://localhost:8000/employees');
     if (!res.ok) throw new Error()
     employees.value = await res.json()
   } catch (e) {

@@ -91,7 +91,7 @@ export default {
   methods: {
     async loadSettings() {
       try {
-        const res = await axios.get('/api/settings.json');
+  const res = await axios.get('http://localhost:8000/api/settings.json');
         const defaultApp = { in_start: '', in_end: '', out_start: '', out_end: '' };
         const defaultDevice = { ip: '', port: '', name: '', location: '' };
         this.settings = {
@@ -105,7 +105,7 @@ export default {
     },
     async saveAppSettings() {
       try {
-        await axios.post('/api/settings.json', {
+  await axios.post('http://localhost:8000/api/settings.json', {
           app: this.settings.app,
           device: this.settings.device
         });
@@ -116,7 +116,7 @@ export default {
     },
     async saveDeviceSettings() {
       try {
-        await axios.post('/api/settings.json', {
+  await axios.post('http://localhost:8000/api/settings.json', {
           app: this.settings.app,
           device: this.settings.device
         });
@@ -128,6 +128,13 @@ export default {
   },
   mounted() {
     this.loadSettings();
+  },
+  watch: {
+    tab(newVal) {
+      if (newVal === 0 || newVal === 1) {
+        this.loadSettings();
+      }
+    }
   }
 };
 </script>
