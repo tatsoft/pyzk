@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -11,6 +12,36 @@ from attendance_api.schemas import *
 from pydantic import BaseModel
 from datetime import time
 
+from attendance_api.schemas_extra import (
+    ShiftCreate, ShiftUpdate, ShiftOut,
+    SchedulePeriodCreate, SchedulePeriodUpdate, SchedulePeriodOut,
+    EmployeeScheduleCreate, EmployeeScheduleUpdate, EmployeeScheduleOut,
+    AttendanceRecordCreate, AttendanceRecordUpdate, AttendanceRecordOut,
+    AttendanceSummaryCreate, AttendanceSummaryUpdate, AttendanceSummaryOut,
+    LeaveTypeCreate, LeaveTypeUpdate, LeaveTypeOut,
+    LeaveCreate, LeaveUpdate, LeaveOut,
+    HolidayCreate, HolidayUpdate, HolidayOut
+)
+from attendance_api.auth import (
+    get_password_hash, verify_password, create_access_token,
+    get_current_user, get_current_admin, get_db
+)
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import List
+
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vue dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Place after all imports and app setup
 class AppSettingsSchema(BaseModel):
     in_start: time
     in_end: time
@@ -57,6 +88,7 @@ from attendance_api.auth import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()

@@ -25,7 +25,7 @@
             <v-icon :color="dbStatus === 'ok' ? 'green' : 'red'">mdi-database</v-icon>
           </span>
           <span title="Device status" style="margin-right:8px;">
-            <v-icon :color="deviceStatus === 'ok' ? 'green' : 'red'">mdi-usb</v-icon>
+            <v-icon :color="deviceStatus === 'ok' ? 'green' : 'red'">mdi-ethernet</v-icon>
           </span>
           <v-btn icon @click="logout" v-if="username">
             <v-icon>mdi-logout</v-icon>
