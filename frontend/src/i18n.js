@@ -38,6 +38,14 @@ const messages = {
     manage_holidays: 'Manage holidays for each year here.',
     manage_app_settings: 'Configure application settings here.',
   
+    total_records: 'Total Records',
+    unique_employees: 'Unique Employees',
+    earliest_date: 'Earliest Date',
+    latest_date: 'Latest Date',
+  present_count: 'Present Count',
+  daily_attendance: 'Daily Attendance',
+  weekly_attendance: 'Weekly Attendance',
+  monthly_attendance: 'Monthly Attendance',
   },
   ar: {
   home: 'الرئيسية',
@@ -75,6 +83,14 @@ const messages = {
     manage_users_roles: 'قم بإدارة المستخدمين وصلاحياتهم هنا.',
     manage_holidays: 'قم بإدارة العطلات لكل سنة هنا.',
     manage_app_settings: 'قم بضبط إعدادات التطبيق هنا.',
+    total_records: 'إجمالي السجلات',
+    unique_employees: 'عدد الموظفين',
+    earliest_date: 'أول تاريخ',
+    latest_date: 'آخر تاريخ',
+  present_count: 'عدد الحضور',
+  daily_attendance: 'الحضور اليومي',
+  weekly_attendance: 'الحضور الأسبوعي',
+  monthly_attendance: 'الحضور الشهري',
   }
 }
 

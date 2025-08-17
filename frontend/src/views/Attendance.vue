@@ -18,7 +18,22 @@
       </v-window-item>
       <v-window-item value="summary">
         <v-card-text :class="rtlClass">
-          <div>{{ $t('attendance_summary_placeholder') }}</div>
+          <div>
+            <h3>{{ $t('summary') }}</h3>
+            <ul>
+              <li>{{ $t('total_records') }}: {{ totalRecords }}</li>
+              <li>{{ $t('unique_employees') }}: {{ uniqueEmployees }}</li>
+              <li>{{ $t('earliest_date') }}: {{ earliestDate }}</li>
+              <li>{{ $t('latest_date') }}: {{ latestDate }}</li>
+              <li>{{ $t('present_count') }}: {{ presentCount }}</li>
+            </ul>
+            <h4>{{ $t('daily_attendance') }}</h4>
+            <AttendanceBarChart v-if="dailyChartData" :chartData="dailyChartData" :chartOptions="chartOptions" />
+            <h4>{{ $t('weekly_attendance') }}</h4>
+            <AttendanceBarChart v-if="weeklyChartData" :chartData="weeklyChartData" :chartOptions="chartOptions" />
+            <h4>{{ $t('monthly_attendance') }}</h4>
+            <AttendanceBarChart v-if="monthlyChartData" :chartData="monthlyChartData" :chartOptions="chartOptions" />
+          </div>
         </v-card-text>
       </v-window-item>
     </v-window>
@@ -29,6 +44,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AttendanceBarChart from '../components/AttendanceBarChart.js'
 const tab = ref('inout')
 const { locale, t } = useI18n()
 const isArabic = computed(() => locale.value === 'ar')
@@ -42,6 +58,84 @@ const headers = [
   { text: t('in_time') || 'In Time', value: 'in_time' },
   { text: t('out_time') || 'Out Time', value: 'out_time' },
 ]
+
+// Summary statistics
+const totalRecords = computed(() => attendance.value.length)
+const uniqueEmployees = computed(() => new Set(attendance.value.map(a => a.employee_name)).size)
+const sortedDates = computed(() => attendance.value.map(a => a.date).filter(Boolean).sort())
+const earliestDate = computed(() => sortedDates.value[0] || '-')
+const latestDate = computed(() => sortedDates.value[sortedDates.value.length - 1] || '-')
+const presentCount = computed(() => attendance.value.filter(a => a.in_time).length)
+
+// Chart helpers
+function groupBy(arr, fn) {
+  return arr.reduce((acc, x) => {
+    const k = fn(x)
+    acc[k] = (acc[k] || 0) + 1
+    return acc
+  }, {})
+}
+
+const dailyChartData = computed(() => {
+  if (!attendance.value.length) return null
+  const grouped = groupBy(attendance.value, a => a.date)
+  const labels = Object.keys(grouped).sort()
+  return {
+    labels,
+    datasets: [{
+      label: t('daily_attendance'),
+      backgroundColor: '#1976d2',
+      data: labels.map(l => grouped[l])
+    }]
+  }
+})
+
+const weeklyChartData = computed(() => {
+  if (!attendance.value.length) return null
+  // Get week string as YYYY-WW
+  const grouped = groupBy(attendance.value, a => {
+    const d = new Date(a.date)
+    const year = d.getFullYear()
+    const week = Math.ceil(((d - new Date(year,0,1)) / 86400000 + new Date(year,0,1).getDay()+1) / 7)
+    return `${year}-W${week}`
+  })
+  const labels = Object.keys(grouped).sort()
+  return {
+    labels,
+    datasets: [{
+      label: t('weekly_attendance'),
+      backgroundColor: '#43a047',
+      data: labels.map(l => grouped[l])
+    }]
+  }
+})
+
+const monthlyChartData = computed(() => {
+  if (!attendance.value.length) return null
+  // Get month string as YYYY-MM
+  const grouped = groupBy(attendance.value, a => a.date?.slice(0,7))
+  const labels = Object.keys(grouped).sort()
+  return {
+    labels,
+    datasets: [{
+      label: t('monthly_attendance'),
+      backgroundColor: '#fbc02d',
+      data: labels.map(l => grouped[l])
+    }]
+  }
+})
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: { display: false },
+    title: { display: false }
+  },
+  scales: {
+    x: { title: { display: true, text: t('date') } },
+    y: { title: { display: true, text: t('present_count') }, beginAtZero: true }
+  }
+}
 
 onMounted(async () => {
   loading.value = true
