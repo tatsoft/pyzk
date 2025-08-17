@@ -92,7 +92,12 @@ export default {
     async loadSettings() {
       try {
         const res = await axios.get('/api/settings.json');
-        this.settings = res.data;
+        const defaultApp = { in_start: '', in_end: '', out_start: '', out_end: '' };
+        const defaultDevice = { ip: '', port: '', name: '', location: '' };
+        this.settings = {
+          app: { ...defaultApp, ...(res.data && res.data.app ? res.data.app : {}) },
+          device: { ...defaultDevice, ...(res.data && res.data.device ? res.data.device : {}) }
+        };
         this.settingsError = '';
       } catch (e) {
         this.settingsError = 'Failed to load settings.json';
