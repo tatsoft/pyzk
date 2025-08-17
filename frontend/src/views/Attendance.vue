@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 const tab = ref('inout')
@@ -37,7 +38,7 @@ const attendance = ref([])
 const loading = ref(false)
 const headers = [
   { text: t('date') || 'Date', value: 'date' },
-  { text: t('employee') || 'Employee', value: 'employee' },
+  { text: t('employee') || 'Employee', value: 'employee_name' },
   { text: t('in_time') || 'In Time', value: 'in_time' },
   { text: t('out_time') || 'Out Time', value: 'out_time' },
 ]
@@ -46,15 +47,21 @@ onMounted(async () => {
   loading.value = true
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch('http://localhost:8000/attendance', {
+    const res = await fetch('http://localhost:8000/attendance_records/', {
       headers: { Authorization: `Bearer ${token}` }
     })
     if (!res.ok) throw new Error()
-    attendance.value = await res.json()
+    const data = await res.json()
+    // Map employee name if present, else show ID
+    attendance.value = data.map(item => ({
+      ...item,
+      employee_name: item.employee?.name || item.employee_id || ''
+    }))
   } catch (e) {
     attendance.value = []
   } finally {
     loading.value = false
   }
 })
+
 </script>
