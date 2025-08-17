@@ -17,16 +17,16 @@
                 <v-form ref="appSettingsForm" class="mt-4">
                   <v-row>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.app?.in_start" label="In Start (HH:MM)" required></v-text-field>
+                      <v-text-field v-model="settings.app.in_start" label="In Start (HH:MM)" required></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.app?.in_end" label="In End (HH:MM)" required></v-text-field>
+                      <v-text-field v-model="settings.app.in_end" label="In End (HH:MM)" required></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.app?.out_start" label="Out Start (HH:MM)" required></v-text-field>
+                      <v-text-field v-model="settings.app.out_start" label="Out Start (HH:MM)" required></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.app?.out_end" label="Out End (HH:MM)" required></v-text-field>
+                      <v-text-field v-model="settings.app.out_end" label="Out End (HH:MM)" required></v-text-field>
                     </v-col>
                   </v-row>
                 </v-form>
@@ -42,16 +42,16 @@
                 <v-form ref="deviceSettingsForm" class="mt-4">
                   <v-row>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.device?.ip" label="Device IP" required></v-text-field>
+                      <v-text-field v-model="settings.device.ip" label="Device IP" required></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.device?.port" label="Device Port" type="number" required></v-text-field>
+                      <v-text-field v-model="settings.device.port" label="Device Port" type="number" required></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.device?.name" label="Device Name"></v-text-field>
+                      <v-text-field v-model="settings.device.name" label="Device Name"></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <v-text-field v-model="settings.device?.location" label="Device Location"></v-text-field>
+                      <v-text-field v-model="settings.device.location" label="Device Location"></v-text-field>
                     </v-col>
                   </v-row>
                 </v-form>
