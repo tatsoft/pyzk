@@ -1,3 +1,13 @@
+# AppSettings model for configurable in/out time windows
+from sqlalchemy import Time
+
+class AppSettings(Base):
+    __tablename__ = "app_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    in_start = Column(Time, nullable=False)
+    in_end = Column(Time, nullable=False)
+    out_start = Column(Time, nullable=False)
+    out_end = Column(Time, nullable=False)
 from sqlalchemy import Column, Integer, String, Date, DateTime, Time, ForeignKey, Boolean, Float
 from sqlalchemy.orm import declarative_base, relationship
 

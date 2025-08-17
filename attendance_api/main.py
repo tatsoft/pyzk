@@ -6,7 +6,41 @@ from sqlalchemy.exc import SQLAlchemyError
 import socket
 from attendance_api.database import init_db
 from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
-from attendance_api.schemas import EmployeeCreate, EmployeeUpdate, EmployeeOut
+from attendance_api.models import AppSettings
+from attendance_api.schemas import *
+from pydantic import BaseModel
+from datetime import time
+
+class AppSettingsSchema(BaseModel):
+    in_start: time
+    in_end: time
+    out_start: time
+    out_end: time
+    class Config:
+        orm_mode = True
+
+# Admin-only: Get and set app settings
+@app.get("/settings", response_model=AppSettingsSchema)
+def get_settings(db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    settings = db.query(AppSettings).first()
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    return settings
+
+@app.post("/settings", response_model=AppSettingsSchema)
+def set_settings(settings: AppSettingsSchema, db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    db_settings = db.query(AppSettings).first()
+    if db_settings:
+        db_settings.in_start = settings.in_start
+        db_settings.in_end = settings.in_end
+        db_settings.out_start = settings.out_start
+        db_settings.out_end = settings.out_end
+    else:
+        db_settings = AppSettings(**settings.dict())
+        db.add(db_settings)
+    db.commit()
+    db.refresh(db_settings)
+    return db_settings
 from attendance_api.schemas_extra import (
     ShiftCreate, ShiftUpdate, ShiftOut,
     SchedulePeriodCreate, SchedulePeriodUpdate, SchedulePeriodOut,
