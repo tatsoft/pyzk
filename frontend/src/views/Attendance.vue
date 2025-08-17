@@ -27,12 +27,21 @@
               <li>{{ $t('latest_date') }}: {{ latestDate }}</li>
               <li>{{ $t('present_count') }}: {{ presentCount }}</li>
             </ul>
+            <h4>{{ $t('employee_statistics') }}</h4>
+            <v-data-table
+              :headers="empStatsHeaders"
+              :items="employeeStats"
+              class="elevation-1 mb-6"
+              :no-data-text="$t('no_data')"
+              dense
+            />
             <h4>{{ $t('daily_attendance') }}</h4>
             <AttendanceBarChart v-if="dailyChartData" :chartData="dailyChartData" :chartOptions="chartOptions" />
             <h4>{{ $t('weekly_attendance') }}</h4>
             <AttendanceBarChart v-if="weeklyChartData" :chartData="weeklyChartData" :chartOptions="chartOptions" />
             <h4>{{ $t('monthly_attendance') }}</h4>
             <AttendanceBarChart v-if="monthlyChartData" :chartData="monthlyChartData" :chartOptions="chartOptions" />
+<!-- Per-employee statistics are now in <script setup> -->
           </div>
         </v-card-text>
       </v-window-item>
@@ -96,7 +105,7 @@ const weeklyChartData = computed(() => {
   const grouped = groupBy(attendance.value, a => {
     const d = new Date(a.date)
     const year = d.getFullYear()
-    const week = Math.ceil(((d - new Date(year,0,1)) / 86400000 + new Date(year,0,1).getDay()+1) / 7)
+    const week = Math.ceil(((d.getTime() - new Date(year,0,1).getTime()) / 86400000 + new Date(year,0,1).getDay()+1) / 7)
     return `${year}-W${week}`
   })
   const labels = Object.keys(grouped).sort()
@@ -137,6 +146,28 @@ const chartOptions = {
   }
 }
 
+// Employee statistics table headers
+const empStatsHeaders = [
+  { text: t('employee') || 'Employee', value: 'employee_name' },
+  { text: t('present_days') || 'Present Days', value: 'present_days' }
+]
+
+// Compute employee statistics
+const employeeStats = computed(() => {
+  // Group attendance by employee_name and count present days (where in_time exists)
+  const stats = {}
+  for (const a of attendance.value) {
+    if (!a.employee_name) continue
+    if (!stats[a.employee_name]) stats[a.employee_name] = 0
+    if (a.in_time) stats[a.employee_name] += 1
+  }
+  return Object.entries(stats).map(([employee_name, present_days]) => ({
+    employee_name,
+    present_days
+  }))
+})
+
+// @ts-ignore
 onMounted(async () => {
   loading.value = true
   try {

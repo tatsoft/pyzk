@@ -1,3 +1,4 @@
+// ...existing code...
 import { createI18n } from 'vue-i18n'
 
 const messages = {
@@ -46,6 +47,10 @@ const messages = {
   daily_attendance: 'Daily Attendance',
   weekly_attendance: 'Weekly Attendance',
   monthly_attendance: 'Monthly Attendance',
+  employee_statistics: 'Employee Statistics',
+  attendance_count: 'Attendance Count',
+  first_attendance: 'First Attendance',
+  last_attendance: 'Last Attendance',
   },
   ar: {
   home: 'الرئيسية',
@@ -91,6 +96,10 @@ const messages = {
   daily_attendance: 'الحضور اليومي',
   weekly_attendance: 'الحضور الأسبوعي',
   monthly_attendance: 'الحضور الشهري',
+  employee_statistics: 'إحصائيات الموظف',
+  attendance_count: 'عدد الحضور',
+  first_attendance: 'أول حضور',
+  last_attendance: 'آخر حضور',
   }
 }
 
