@@ -1,0 +1,14 @@
+{
+  "app": {
+    "in_start": "08:00",
+    "in_end": "09:00",
+    "out_start": "16:00",
+    "out_end": "18:00"
+  },
+  "device": {
+    "ip": "192.0.2.1",
+    "port": 4380,
+    "name": "Attendance Device",
+    "location": "Main Office"
+  }
+}

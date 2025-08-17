@@ -26,11 +26,17 @@ from attendance_api.auth import (
     get_password_hash, verify_password, create_access_token,
     get_current_user, get_current_admin, get_db
 )
+
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
 
+# Import the settings_api router
+from attendance_api import settings_api
+
+
 
 app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +45,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register the settings_api router
+app.include_router(settings_api.router)
 
 
 # Place after all imports and app setup
@@ -116,9 +125,9 @@ def health_db(db: Session = Depends(get_db)):
 @app.get("/health/device")
 def health_device():
     # Example: try to connect to device IP/port (replace with real logic)
-   # DEVICE_IP = "192.168.1.201"   <-- set your device IP
-    DEVICE_IP = "127.0.0.1"
-    DEVICE_PORT = 4380            # <-- set your device port
+    # DEVICE_IP = "192.168.1.201"   <-- set your device IP
+    DEVICE_IP = "127.0.2.1"  # TEST-NET-1, reserved for documentation/fake use
+    DEVICE_PORT = 4380   # <-- set your device port
     try:
         with socket.create_connection((DEVICE_IP, DEVICE_PORT), timeout=2):
             return {"status": "ok"}

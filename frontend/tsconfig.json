@@ -1,9 +1,9 @@
 {
-  "extends": "tsconfig.json",
+  // "extends": "tsconfig.json",
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "lib": ["ES2015", "DOM"]
+  "lib": ["ES2017", "DOM"]
   }
 }
