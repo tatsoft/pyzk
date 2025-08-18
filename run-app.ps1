@@ -1,5 +1,5 @@
 # Activate the virtual environment
-$venvPath = Join-Path $PSScriptRoot '.venv\Scripts\Activate.ps1'
+$venvPath = Join-Path $PSScriptRoot 'venv\Scripts\Activate.ps1'
 if (Test-Path $venvPath) {
 	& $venvPath
 } else {

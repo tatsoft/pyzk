@@ -1,0 +1,16 @@
+# This file lists all Node.js packages required to run the frontend app.
+# To install, run: npm install
+# This file is for documentation only; use package.json for actual dependency management.
+
+@mdi/font@^7.4.47
+axios@^1.11.0
+chart.js@^4.5.0
+sass@^1.90.0
+sass-loader@^16.0.5
+vue@^3.5.18
+vue-chartjs@^5.3.2
+vue-i18n@^12.0.0-alpha.3
+vue-router@^4.5.1
+vuetify@^3.9.5
+@vitejs/plugin-vue@^6.0.1
+vite@^7.1.2
