@@ -142,7 +142,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     # Include is_admin in the token payload for frontend
-    access_token = create_access_token(data={"sub": user.id, "is_admin": user.is_admin})
+    access_token = create_access_token(data={"sub": user.code, "username": user.code, "is_admin": user.is_admin})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.on_event("startup")
