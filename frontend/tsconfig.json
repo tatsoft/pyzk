@@ -6,7 +6,9 @@
     "allowJs": true,
     "checkJs": true,
     "lib": ["ES2017", "DOM"],
-    "outDir": "dist" // Output compiled files to 'dist' to avoid overwriting source files
+    "outDir": "dist", // Output compiled files to 'dist' to avoid overwriting source files
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
   }
 }
   
