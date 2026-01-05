@@ -145,6 +145,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def on_startup():
     init_db()
 
+def on_startup():
+    init_db()
+
 
 # Debugging endpoint to test database connection
 @app.get("/debug/db-connection")
