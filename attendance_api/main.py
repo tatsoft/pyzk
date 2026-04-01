@@ -4,10 +4,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 import socket
+import json
+import os
 from attendance_api.database import init_db, SessionLocal, engine
 from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
 from attendance_api.models import AppSettings
 from attendance_api.schemas import *
+
+# Load settings
+SETTINGS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'settings.json')
+with open(SETTINGS_PATH, 'r') as f:
+    settings = json.load(f)
+DEVICE_IP = settings['device']['ip']
+DEVICE_PORT = settings['device']['port']
 from pydantic import BaseModel
 from datetime import time
 
@@ -124,9 +133,6 @@ def health_db(db: Session = Depends(get_db)):
 @app.get("/health/device")
 def health_device():
     # Example: try to connect to device IP/port (replace with real logic)
-    # DEVICE_IP = "192.168.1.201"   <-- set your device IP
-    DEVICE_IP = "127.0.2.1"  # TEST-NET-1, reserved for documentation/fake use
-    DEVICE_PORT = 4380   # <-- set your device port
     try:
         with socket.create_connection((DEVICE_IP, DEVICE_PORT), timeout=2):
             return {"status": "ok"}

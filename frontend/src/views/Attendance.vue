@@ -36,11 +36,11 @@
               dense
             />
             <h4>{{ $t('daily_attendance') }}</h4>
-            <AttendanceBarChart v-if="dailyChartData" :chartData="dailyChartData" :chartOptions="chartOptions" />
+            <!-- <AttendanceBarChart v-if="dailyChartData" :chartData="dailyChartData" :chartOptions="chartOptions" /> -->
             <h4>{{ $t('weekly_attendance') }}</h4>
-            <AttendanceBarChart v-if="weeklyChartData" :chartData="weeklyChartData" :chartOptions="chartOptions" />
+            <!-- <AttendanceBarChart v-if="weeklyChartData" :chartData="weeklyChartData" :chartOptions="chartOptions" /> -->
             <h4>{{ $t('monthly_attendance') }}</h4>
-            <AttendanceBarChart v-if="monthlyChartData" :chartData="monthlyChartData" :chartOptions="chartOptions" />
+            <!-- <AttendanceBarChart v-if="monthlyChartData" :chartData="monthlyChartData" :chartOptions="chartOptions" /> -->
 <!-- Per-employee statistics are now in <script setup> -->
           </div>
         </v-card-text>
@@ -53,7 +53,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AttendanceBarChart from '../components/AttendanceBarChart.js'
+// import AttendanceBarChart from '../components/AttendanceBarChart.js'
 const tab = ref('inout')
 const { locale, t } = useI18n()
 const isArabic = computed(() => locale.value === 'ar')

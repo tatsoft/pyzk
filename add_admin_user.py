@@ -1,10 +1,11 @@
 # Script to add an admin user to the database for FastAPI backend
-from attendance_api.database import SessionLocal
+from attendance_api.database import SessionLocal, init_db
 from attendance_api.models import Employee
 from attendance_api.auth import get_password_hash
 
 
 def create_admin():
+    init_db()  # Ensure tables are created
     db = SessionLocal()
     code = "admin"
     password = "admin"  # Change this to a secure password if needed

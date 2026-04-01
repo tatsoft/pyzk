@@ -6,7 +6,7 @@
     "out_end": "18:00"
   },
   "device": {
-    "ip": "192.168.1.201",
+    "ip": "192.168.8.201",
     "port": 4370,
     "name": "Main Entrance",
     "location": "Front Desk"
