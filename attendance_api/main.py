@@ -6,6 +6,8 @@ from sqlalchemy.exc import SQLAlchemyError
 import socket
 import json
 import os
+from datetime import datetime
+from zk import ZK, const
 from attendance_api.database import init_db, SessionLocal, engine
 from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
 from attendance_api.models import AppSettings
@@ -105,18 +107,6 @@ from attendance_api.auth import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vue dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Health check endpoints
 @app.get("/health/db")
@@ -640,3 +630,82 @@ def delete_holiday(holiday_id: int, db: Session = Depends(get_db)):
     db.delete(db_holiday)
     db.commit()
     return {"ok": True}
+
+# Import logs from device
+@app.post("/import-logs/")
+def import_logs_from_device(db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    """Import attendance logs from the ZK device and store in database"""
+    try:
+        # Connect to ZK device
+        zk = ZK(DEVICE_IP, port=DEVICE_PORT, timeout=5, password=0, force_udp=False, ommit_ping=False)
+        conn = zk.connect()
+        
+        if not conn:
+            raise HTTPException(status_code=500, detail="Failed to connect to device")
+        
+        # Get attendance records from device
+        attendance_records = conn.get_attendance()
+        imported_count = 0
+        skipped_count = 0
+        
+        for record in attendance_records:
+            try:
+                # Get or create employee based on user_id from device
+                employee = db.query(Employee).filter(Employee.code == str(record.user_id)).first()
+                if not employee:
+                    # Create a new employee if not found
+                    employee = Employee(
+                        code=str(record.user_id),
+                        name=f"User {record.user_id}",
+                        department="General",
+                        password_hash=get_password_hash("default"),
+                        is_admin=False
+                    )
+                    db.add(employee)
+                    db.commit()
+                    db.refresh(employee)
+                
+                # Check if attendance record already exists
+                timestamp = datetime.fromtimestamp(record.timestamp) if hasattr(record, 'timestamp') else datetime.now()
+                date_only = timestamp.date()
+                
+                existing = db.query(AttendanceRecord).filter(
+                    AttendanceRecord.employee_id == employee.id,
+                    AttendanceRecord.date == date_only
+                ).first()
+                
+                if existing:
+                    # Update the existing record based on punch status
+                    if record.status == 0:  # In punch
+                        if not existing.in_time or timestamp < existing.in_time:
+                            existing.in_time = timestamp
+                    else:  # Out punch
+                        if not existing.out_time or timestamp > existing.out_time:
+                            existing.out_time = timestamp
+                    db.commit()
+                    skipped_count += 1
+                else:
+                    # Create new attendance record
+                    att_record = AttendanceRecord(
+                        employee_id=employee.id,
+                        date=date_only,
+                        in_time=timestamp if record.status == 0 else None,
+                        out_time=timestamp if record.status != 0 else None
+                    )
+                    db.add(att_record)
+                    db.commit()
+                    imported_count += 1
+            except Exception as e:
+                print(f"Error processing record {record}: {e}")
+                continue
+        
+        conn.disconnect()
+        
+        return {
+            "status": "success",
+            "imported": imported_count,
+            "updated": skipped_count,
+            "total_processed": imported_count + skipped_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error importing logs: {str(e)}")
