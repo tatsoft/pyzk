@@ -1,6 +1,6 @@
 {
   "app": {
-    "in_start": "08:00",
+    "in_start": "07:00",
     "in_end": "09:00",
     "out_start": "17:00",
     "out_end": "18:00"
