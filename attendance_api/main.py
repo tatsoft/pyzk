@@ -12,6 +12,10 @@ from attendance_api.database import init_db, SessionLocal, engine
 from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
 from attendance_api.models import AppSettings
 from attendance_api.schemas import *
+from threading import Thread
+from attendance_api.models import Employee, Shift, SchedulePeriod, EmployeeSchedule, AttendanceRecord, AttendanceSummary, LeaveType, Leave, Holiday
+from attendance_api.models import AppSettings
+from attendance_api.schemas import *
 
 # Load settings
 SETTINGS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'settings.json')
@@ -176,6 +180,15 @@ def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db), adm
 @app.get("/employees/", response_model=List[EmployeeOut])
 def read_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
     return db.query(Employee).offset(skip).limit(limit).all()
+
+@app.get("/employees-simple/")
+def get_employees_simple(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get simplified employee list with name and ID"""
+    employees = db.query(Employee).offset(skip).limit(limit).all()
+    return [
+        {"id": emp.id, "code": emp.code, "name": emp.name, "department": emp.department}
+        for emp in employees
+    ]
 
 @app.get("/employees/{employee_id}", response_model=EmployeeOut)
 def read_employee(employee_id: int, db: Session = Depends(get_db), current_user: Employee = Depends(get_current_user)):
@@ -632,28 +645,30 @@ def delete_holiday(holiday_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 # Import logs from device
-@app.post("/import-logs/")
-def import_logs_from_device(db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
-    """Import attendance logs from the ZK device and store in database"""
+def process_logs_background(device_ip, device_port):
+    """Background function to process logs from device"""
     try:
-        # Connect to ZK device
-        zk = ZK(DEVICE_IP, port=DEVICE_PORT, timeout=5, password=0, force_udp=False, ommit_ping=False)
+        db = SessionLocal()
+        zk = ZK(device_ip, port=device_port, timeout=10, password=0, force_udp=False, ommit_ping=False)
         conn = zk.connect()
         
         if not conn:
-            raise HTTPException(status_code=500, detail="Failed to connect to device")
+            print("Failed to connect to device")
+            return
         
-        # Get attendance records from device
+        print("Getting attendance records from device...")
         attendance_records = conn.get_attendance()
+        print(f"Retrieved {len(attendance_records)} records")
+        
         imported_count = 0
         skipped_count = 0
+        batch_size = 100
         
-        for record in attendance_records:
+        for i, record in enumerate(attendance_records):
             try:
-                # Get or create employee based on user_id from device
+                # Get or create employee
                 employee = db.query(Employee).filter(Employee.code == str(record.user_id)).first()
                 if not employee:
-                    # Create a new employee if not found
                     employee = Employee(
                         code=str(record.user_id),
                         name=f"User {record.user_id}",
@@ -662,50 +677,152 @@ def import_logs_from_device(db: Session = Depends(get_db), admin: Employee = Dep
                         is_admin=False
                     )
                     db.add(employee)
-                    db.commit()
-                    db.refresh(employee)
+                    db.flush()
                 
-                # Check if attendance record already exists
-                timestamp = datetime.fromtimestamp(record.timestamp) if hasattr(record, 'timestamp') else datetime.now()
+                # Handle timestamp
+                try:
+                    timestamp = datetime.fromtimestamp(record.timestamp)
+                except:
+                    timestamp = datetime.now()
+                
                 date_only = timestamp.date()
                 
+                # Check if record exists for this employee and date
                 existing = db.query(AttendanceRecord).filter(
                     AttendanceRecord.employee_id == employee.id,
                     AttendanceRecord.date == date_only
                 ).first()
                 
                 if existing:
-                    # Update the existing record based on punch status
-                    if record.status == 0:  # In punch
+                    # Update based on punch type (0 = in, 1+ = out)
+                    if record.punch == 0:  # In punch
                         if not existing.in_time or timestamp < existing.in_time:
                             existing.in_time = timestamp
                     else:  # Out punch
                         if not existing.out_time or timestamp > existing.out_time:
                             existing.out_time = timestamp
-                    db.commit()
                     skipped_count += 1
                 else:
-                    # Create new attendance record
+                    # Create new record
                     att_record = AttendanceRecord(
                         employee_id=employee.id,
                         date=date_only,
-                        in_time=timestamp if record.status == 0 else None,
-                        out_time=timestamp if record.status != 0 else None
+                        in_time=timestamp if record.punch == 0 else None,
+                        out_time=timestamp if record.punch != 0 else None
                     )
                     db.add(att_record)
-                    db.commit()
                     imported_count += 1
+                
+                # Batch commit every N records
+                if (i + 1) % batch_size == 0:
+                    db.commit()
+                    print(f"Processed {i + 1} records...")
+                    
             except Exception as e:
-                print(f"Error processing record {record}: {e}")
+                print(f"Error processing record {i}: {e}")
                 continue
         
+        # Final commit
+        db.commit()
         conn.disconnect()
+        db.close()
+        
+        print(f"Import complete: {imported_count} imported, {skipped_count} updated")
+    except Exception as e:
+        print(f"Background import error: {e}")
+        import traceback
+        traceback.print_exc()
+
+@app.post("/import-logs/")
+def import_logs_from_device(db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    """Import attendance logs from the ZK device (starts background process)"""
+    try:
+        # Start background import thread
+        thread = Thread(target=process_logs_background, args=(DEVICE_IP, DEVICE_PORT), daemon=True)
+        thread.start()
         
         return {
-            "status": "success",
-            "imported": imported_count,
-            "updated": skipped_count,
-            "total_processed": imported_count + skipped_count
+            "status": "importing",
+            "message": "Import process started in background. Check back in a few minutes.",
+            "device_ip": DEVICE_IP
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error importing logs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting import: {str(e)}")
+
+# Import users from device
+def process_users_background(device_ip, device_port):
+    """Background function to process users from device"""
+    try:
+        db = SessionLocal()
+        zk = ZK(device_ip, port=device_port, timeout=10, password=0, force_udp=False, ommit_ping=False)
+        conn = zk.connect()
+        
+        if not conn:
+            print("Failed to connect to device")
+            return
+        
+        print("Getting users from device...")
+        users = conn.get_users()
+        print(f"Retrieved {len(users)} users")
+        
+        imported_count = 0
+        updated_count = 0
+        
+        for user in users:
+            try:
+                # Check if employee already exists
+                employee = db.query(Employee).filter(Employee.code == str(user.user_id)).first()
+                
+                if employee:
+                    # Update existing employee
+                    employee.name = user.name or f"User {user.user_id}"
+                    updated_count += 1
+                else:
+                    # Create new employee
+                    employee = Employee(
+                        code=str(user.user_id),
+                        name=user.name or f"User {user.user_id}",
+                        department="General",
+                        password_hash=get_password_hash("default"),
+                        is_admin=False
+                    )
+                    db.add(employee)
+                    imported_count += 1
+                
+                db.flush()
+                
+                # Batch commit every 50 users
+                if (imported_count + updated_count) % 50 == 0:
+                    db.commit()
+                    print(f"Processed {imported_count + updated_count} users...")
+                    
+            except Exception as e:
+                print(f"Error processing user {user.user_id}: {e}")
+                continue
+        
+        # Final commit
+        db.commit()
+        conn.disconnect()
+        db.close()
+        
+        print(f"User import complete: {imported_count} imported, {updated_count} updated")
+    except Exception as e:
+        print(f"Background user import error: {e}")
+        import traceback
+        traceback.print_exc()
+
+@app.post("/import-users/")
+def import_users_from_device(db: Session = Depends(get_db), admin: Employee = Depends(get_current_admin)):
+    """Import users from the ZK device (starts background process)"""
+    try:
+        # Start background import thread
+        thread = Thread(target=process_users_background, args=(DEVICE_IP, DEVICE_PORT), daemon=True)
+        thread.start()
+        
+        return {
+            "status": "importing",
+            "message": "User import process started in background. Check back in a few moments.",
+            "device_ip": DEVICE_IP
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error starting user import: {str(e)}")
